@@ -1,0 +1,17 @@
+{
+    "name": "ciplnew/bugtracking",
+    "description": "Track bugs for development",
+    "authors": [
+        {
+            "name": "ajithkumar.a",
+            "email": "ajithkumar.a@colanonline.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Ciplnew\\BugTracking\\": "src/"
+        }
+    }
+}
