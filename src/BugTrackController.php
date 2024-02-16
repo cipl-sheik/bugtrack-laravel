@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 class BugTrackController extends Controller
 {
     public static function bugTrack($e){
+        dd($e->getMessage());
         $erTittle = explode(":",$e->__toString());
         $user_agent = $_SERVER['HTTP_USER_AGENT'];
         if (strpos($user_agent, 'Opera') || strpos($user_agent, 'OPR/')) $browser = 'Opera';
