@@ -1,17 +1,23 @@
 {
     "name": "ciplnew/bugtracking",
+    "type": "library",
     "description": "Track bugs for development",
+    "keywords": ["bug","bugtrack","bugtracking"],
+    "license": "MIT",
     "authors": [
         {
             "name": "ajithkumar.a",
-            "email": "ajithkumar.a@colanonline.com"
+            "email": "ajithkumar.a@colanonline.com",
+            "role": "Developer"
         }
     ],
     "minimum-stability": "dev",
-    "require": {},
+    "require": {
+        "php": ">=5.3.0"
+    },
     "autoload": {
         "psr-4": {
-            "Ciplnew\\BugTracking\\": "src/"
+            "Ciplnew\\BugTracking\\": "src"
         }
     }
 }
