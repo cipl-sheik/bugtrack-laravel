@@ -8,6 +8,41 @@ use App\Http\Controllers\Controller;
 class BugTrackController extends Controller
 {
     public static function bugTrack($e){
+
+        $ua = strtolower($_SERVER['HTTP_USER_AGENT']);
+        // you can add different browsers with the same way ..
+        if(preg_match('/(chromium)[ \/]([\w.]+)/', $ua))
+                $browser = 'chromium';
+        elseif(preg_match('/(chrome)[ \/]([\w.]+)/', $ua))
+                $browser = 'chrome';
+        elseif(preg_match('/(safari)[ \/]([\w.]+)/', $ua))
+                $browser = 'safari';
+        elseif(preg_match('/(opera)[ \/]([\w.]+)/', $ua))
+                $browser = 'opera';
+        elseif(preg_match('/(msie)[ \/]([\w.]+)/', $ua))
+                $browser = 'msie';
+        elseif(preg_match('/(mozilla)[ \/]([\w.]+)/', $ua))
+                $browser = 'mozilla';
+    
+        preg_match('/('.$browser.')[ \/]([\w]+)/', $ua, $version);
+    
+        $browser_details = array($browser,$version[2], 'name'=>$browser,'version'=>$version[2]);
+        // if(!empty($_SERVER['HTTP_USER_AGENT'])){
+        //     $user_ag = $_SERVER['HTTP_USER_AGENT'];
+        //     if(preg_match('/(Mobile|Android|Tablet|GoBrowser|[0-9]x[0-9]*|uZardWeb\/|Mini|Doris\/|Skyfire\/|iPhone|Fennec\/|Maemo|Iris\/|CLDC\-|Mobi\/)/uis',$user_ag)){
+        //         // dd('Mobile|Android|Tablet|');
+        //     };
+        // };
+        // //  dd('Laptop| Monitor');
+    
+        $isMob = is_numeric(strpos(strtolower($_SERVER["HTTP_USER_AGENT"]), "mobile")); 
+        $device_name = '';
+        if($isMob){ 
+            $device_name ='Mobile Device'; 
+        }else{ 
+            $device_name ='Desktop'; 
+        }
+        
         $erTittle = explode(":",$e->__toString());
         $user_agent = $_SERVER['HTTP_USER_AGENT'];
         if (strpos($user_agent, 'Opera') || strpos($user_agent, 'OPR/')) $browser = 'Opera';
@@ -47,15 +82,17 @@ class BugTrackController extends Controller
             }
         } 
         $data = [
-            'title' => $erTittle[0],
-            'description' => $e->getMessage(),
-            'file_name' => $e->getFile(),
-            'Server_name' => $_SERVER['SERVER_NAME'],
-            'environment' => env('APP_ENV'),
-            'url' => url()->current(),
-            'php_version' => phpversion(),
-            'os_name' => $os_platform,
-            'browser_name' => $browser,
+            'title' => ($erTittle[0])?$erTittle[0]:'',
+            'description' => ($e->getMessage())?$e->getMessage():'',
+            'file_name' => ($e->getFile())?$e->getFile():'',
+            'Server_name' => ($_SERVER['SERVER_NAME'])? $_SERVER['SERVER_NAME']:'',
+            'environment' => (env('APP_ENV'))?env('APP_ENV'):'',
+            'url' => (url()->current())?url()->current():'',
+            'php_version' => (phpversion())?phpversion():'',
+            'os_name' => (php_uname('s'))?php_uname('s'):'',
+            'osversion' => (php_uname('r'))?php_uname('r'):'',
+            'browser_name' => ($browser)?$browser:'',
+            'browser_version'=>($version[2])?$version[2]:'',
             'language' =>'PHP',
         ];
         $curl = curl_init();
