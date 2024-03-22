@@ -7,7 +7,34 @@ use App\Http\Controllers\Controller;
 
 class BugTrackController extends Controller
 {
-    public static function bugTrack($e){
+    public static function bugTrack($e, $linesBefore = 5, $linesAfter = 5){
+
+        $trace = $e->getTrace();
+        $errorFile = $e->getFile();
+        $errorLine = $e->getLine();
+        $errorContext = [];
+    
+        // Read the file where the error occurred
+        $fileLines = file($errorFile);
+    
+        // Determine start and end lines for context
+        $startLine = max(1, $errorLine - $linesBefore);
+        $endLine = min(count($fileLines), $errorLine + $linesAfter);
+
+            // Extract context lines
+    for ($i = $startLine - 1; $i < $endLine; $i++) {
+        $errorContext[] = [
+            'line_number' => $i + 1,
+            'line_content' => $fileLines[$i],
+            'is_error_line' => ($i + 1 === $errorLine)
+        ];
+    }
+    
+        $data1 = [
+            'error_file' => $errorFile,
+            'error_line' => $errorLine,
+            'context' => $errorContext
+        ];
 
         $ua = strtolower($_SERVER['HTTP_USER_AGENT']);
         // you can add different browsers with the same way ..
@@ -94,6 +121,7 @@ class BugTrackController extends Controller
             'browser_name' => ($browser)?$browser:'',
             'browser_version'=>($version[2])?$version[2]:'',
             'language' =>'PHP',
+            'error_file_details' =>$data1,
         ];
         $curl = curl_init();
         curl_setopt_array($curl, array(
