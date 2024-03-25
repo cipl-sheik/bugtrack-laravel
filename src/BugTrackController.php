@@ -121,7 +121,7 @@ class BugTrackController extends Controller
             'browser_name' => ($browser)?$browser:'',
             'browser_version'=>($version[2])?$version[2]:'',
             'language' =>'PHP',
-            'error_file_details' =>$data1,
+            'error_file_details' =>json_encode($data1),
         ];
         $curl = curl_init();
         curl_setopt_array($curl, array(
