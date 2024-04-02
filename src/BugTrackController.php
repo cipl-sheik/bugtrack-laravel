@@ -35,8 +35,8 @@ class BugTrackController extends Controller
             'error_line' => $errorLine,
             'context' => $errorContext
         ];
-
-        $ua = strtolower($_SERVER['HTTP_USER_AGENT']);
+        $browser = '';
+        $ua = strtolower(isset($_SERVER['HTTP_USER_AGENT']));
         // you can add different browsers with the same way ..
         if(preg_match('/(chromium)[ \/]([\w.]+)/', $ua))
                 $browser = 'chromium';
@@ -54,60 +54,8 @@ class BugTrackController extends Controller
         preg_match('/('.$browser.')[ \/]([\w]+)/', $ua, $version);
     
         $browser_details = array($browser,$version[2], 'name'=>$browser,'version'=>$version[2]);
-        // if(!empty($_SERVER['HTTP_USER_AGENT'])){
-        //     $user_ag = $_SERVER['HTTP_USER_AGENT'];
-        //     if(preg_match('/(Mobile|Android|Tablet|GoBrowser|[0-9]x[0-9]*|uZardWeb\/|Mini|Doris\/|Skyfire\/|iPhone|Fennec\/|Maemo|Iris\/|CLDC\-|Mobi\/)/uis',$user_ag)){
-        //         // dd('Mobile|Android|Tablet|');
-        //     };
-        // };
-        // //  dd('Laptop| Monitor');
-    
-        $isMob = is_numeric(strpos(strtolower($_SERVER["HTTP_USER_AGENT"]), "mobile")); 
-        $device_name = '';
-        if($isMob){ 
-            $device_name ='Mobile Device'; 
-        }else{ 
-            $device_name ='Desktop'; 
-        }
-        
         $erTittle = explode(":",$e->__toString());
-        $user_agent = $_SERVER['HTTP_USER_AGENT'];
-        if (strpos($user_agent, 'Opera') || strpos($user_agent, 'OPR/')) $browser = 'Opera';
-        elseif (strpos($user_agent, 'Edg') || strpos($user_agent, 'Edge')) $browser = 'Edge';
-        elseif (strpos($user_agent, 'Chrome')) $browser = 'Chrome';
-        elseif (strpos($user_agent, 'Safari')) $browser = 'Safari';
-        elseif (strpos($user_agent, 'Firefox')) $browser = 'Firefox';
-        elseif (strpos($user_agent, 'MSIE') || strpos($user_agent, 'Trident/7')) $browser = 'Internet Explorer';
-        $os_array =   array(
-            '/windows nt 10/i'      =>  'Windows 10',
-            '/windows nt 6.3/i'     =>  'Windows 8.1',
-            '/windows nt 6.2/i'     =>  'Windows 8',
-            '/windows nt 6.1/i'     =>  'Windows 7',
-            '/windows nt 6.0/i'     =>  'Windows Vista',
-            '/windows nt 5.2/i'     =>  'Windows Server 2003/XP x64',
-            '/windows nt 5.1/i'     =>  'Windows XP',
-            '/windows xp/i'         =>  'Windows XP',
-            '/windows nt 5.0/i'     =>  'Windows 2000',
-            '/windows me/i'         =>  'Windows ME',
-            '/win98/i'              =>  'Windows 98',
-            '/win95/i'              =>  'Windows 95',
-            '/win16/i'              =>  'Windows 3.11',
-            '/macintosh|mac os x/i' =>  'Mac OS X',
-            '/mac_powerpc/i'        =>  'Mac OS 9',
-            '/linux/i'              =>  'Linux',
-            '/ubuntu/i'             =>  'Ubuntu',
-            '/iphone/i'             =>  'iPhone',
-            '/ipod/i'               =>  'iPod',
-            '/ipad/i'               =>  'iPad',
-            '/android/i'            =>  'Android',
-            '/blackberry/i'         =>  'BlackBerry',
-            '/webos/i'              =>  'Mobile'
-        );
-        foreach ( $os_array as $regex => $value ) { 
-            if ( preg_match($regex, $user_agent ) ) {
-                $os_platform = $value;
-            }
-        } 
+ 
         $data = [
             'title' => ($erTittle[0])?$erTittle[0]:'',
             'description' => ($e->getMessage())?$e->getMessage():'',
