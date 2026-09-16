@@ -2,24 +2,35 @@
 
 namespace Ciplnew\BugTracking;
 
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Support\ServiceProvider;
+use Throwable;
 
 class BugTrackServiceProvider extends ServiceProvider
 {
-    /**
-     * Register services.
-     */
+    public const VERSION = '1.0.0';
+
     public function register(): void
     {
-        //register handler
-        $this->app->make('Ciplnew\BugTracking\BugTrackController');
+        $this->mergeConfigFrom(__DIR__.'/../config/bugtracking.php', 'bugtracking');
     }
 
-    /**
-     * Bootstrap services.
-     */
     public function boot(): void
     {
-        include __DIR__.'/routes/web.php';
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__.'/../config/bugtracking.php' => config_path('bugtracking.php'),
+            ], 'bugtracking-config');
+        }
+
+        $this->app->afterResolving(ExceptionHandler::class, function (ExceptionHandler $handler) {
+            if (! method_exists($handler, 'reportable')) {
+                return;
+            }
+
+            $handler->reportable(function (Throwable $e) {
+                BugTrackReporter::report($e);
+            });
+        });
     }
 }
