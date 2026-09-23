@@ -74,7 +74,7 @@ BUGTRACK_KEY=YOUR_PROJECT_KEY
 JSON matching the Go ingest contract:
 
 - `exception.type` / `exception.message` / `exception.file` / `exception.line`
-- `stacktrace` frames
+- `stacktrace` frames with Sentry-style `pre_context`, `context_line`, and `post_context`
 - `request`, `user`, `runtime`, `sdk`
 - `X-Bugtrack-Key` (and `Authorization: Bearer`)
 

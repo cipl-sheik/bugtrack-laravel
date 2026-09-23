@@ -8,7 +8,7 @@ use Throwable;
 
 class BugTrackServiceProvider extends ServiceProvider
 {
-    public const VERSION = '1.0.0';
+    public const VERSION = '1.1.0';
 
     public function register(): void
     {

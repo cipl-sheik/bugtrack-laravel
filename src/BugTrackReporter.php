@@ -17,6 +17,8 @@ class BugTrackReporter
 {
     private const MAX_FRAMES = 30;
 
+    private const CONTEXT_LINES = 5;
+
     /** @var array<int, true> */
     private static $reported = [];
 
@@ -134,11 +136,7 @@ class BugTrackReporter
                 'version' => BugTrackServiceProvider::VERSION,
             ],
             'extra' => [
-                'error_file_details' => [
-                    'error_file' => $file,
-                    'error_line' => $e->getLine(),
-                    'context' => self::codeContext($e->getFile(), $e->getLine()),
-                ],
+                'error_file_details' => self::errorFileDetails($e, $file),
             ],
         ], static function ($value) {
             return $value !== null;
@@ -153,26 +151,25 @@ class BugTrackReporter
         $originAbs = self::sourceFile($e->getFile());
         $origin = self::relative($originAbs);
 
-        $frames = [[
+        $frames = [array_merge([
             'filename' => $origin,
             'function' => self::culprit($e),
             'lineno' => $e->getLine(),
-            'context_line' => self::lineAt($originAbs, $e->getLine()),
             'in_app' => self::isInApp($origin),
-        ]];
+        ], self::sourceSnippet($originAbs, $e->getLine()))];
 
         foreach (array_slice($e->getTrace(), 0, self::MAX_FRAMES) as $frame) {
             $abs = isset($frame['file']) ? self::sourceFile($frame['file']) : '';
             $file = $abs !== '' ? self::relative($abs) : '';
+            $line = (int) ($frame['line'] ?? 0);
 
-            $frames[] = [
+            $frames[] = array_merge([
                 'filename' => $file,
                 'function' => self::frameFunction($frame),
                 'class' => $frame['class'] ?? '',
-                'lineno' => $frame['line'] ?? 0,
-                'context_line' => $abs !== '' ? self::lineAt($abs, (int) ($frame['line'] ?? 0)) : '',
+                'lineno' => $line,
                 'in_app' => self::isInApp($file),
-            ];
+            ], self::sourceSnippet($abs, $line));
         }
 
         return $frames;
@@ -238,42 +235,110 @@ class BugTrackReporter
     }
 
     /**
-     * @return list<array{line_number: int, line_content: string, is_error_line: bool}>
+     * @return array{
+     *     error_file: string,
+     *     error_line: int,
+     *     pre_context: list<string>,
+     *     context_line: string,
+     *     post_context: list<string>,
+     *     context: list<array{line_number: int, line_content: string, is_error_line: bool}>
+     * }
      */
-    private static function codeContext(string $file, int $errorLine, int $around = 5): array
+    private static function errorFileDetails(Throwable $e, string $relativeFile): array
     {
-        $lines = @file($file);
-        if ($lines === false) {
-            return [];
-        }
+        $abs = self::sourceFile($e->getFile());
+        $line = $e->getLine();
+        $snippet = self::sourceSnippet($abs, $line);
 
-        $start = max(1, $errorLine - $around);
-        $end = min(count($lines), $errorLine + $around);
-        $context = [];
-
-        for ($i = $start - 1; $i < $end; $i++) {
-            $context[] = [
-                'line_number' => $i + 1,
-                'line_content' => $lines[$i],
-                'is_error_line' => ($i + 1 === $errorLine),
-            ];
-        }
-
-        return $context;
+        return [
+            'error_file' => $relativeFile,
+            'error_line' => $line,
+            'pre_context' => $snippet['pre_context'],
+            'context_line' => $snippet['context_line'],
+            'post_context' => $snippet['post_context'],
+            'context' => self::codeContext($abs, $line),
+        ];
     }
 
-    private static function lineAt(string $file, int $line): string
+    /**
+     * Sentry-style source window used by the BugTrack issue detail page.
+     *
+     * @return array{pre_context: list<string>, context_line: string, post_context: list<string>}
+     */
+    private static function sourceSnippet(string $file, int $line, int $around = self::CONTEXT_LINES): array
     {
+        $empty = [
+            'pre_context' => [],
+            'context_line' => '',
+            'post_context' => [],
+        ];
+
         if ($file === '' || $line < 1) {
-            return '';
+            return $empty;
         }
 
         $lines = @file($file);
         if ($lines === false || ! isset($lines[$line - 1])) {
-            return '';
+            return $empty;
         }
 
-        return rtrim($lines[$line - 1], "\r\n");
+        $start = max(1, $line - $around);
+        $end = min(count($lines), $line + $around);
+        $pre = [];
+        $post = [];
+
+        for ($n = $start; $n < $line; $n++) {
+            $pre[] = rtrim($lines[$n - 1], "\r\n");
+        }
+
+        for ($n = $line + 1; $n <= $end; $n++) {
+            $post[] = rtrim($lines[$n - 1], "\r\n");
+        }
+
+        return [
+            'pre_context' => $pre,
+            'context_line' => rtrim($lines[$line - 1], "\r\n"),
+            'post_context' => $post,
+        ];
+    }
+
+    /**
+     * @return list<array{line_number: int, line_content: string, is_error_line: bool}>
+     */
+    private static function codeContext(string $file, int $errorLine, int $around = self::CONTEXT_LINES): array
+    {
+        $snippet = self::sourceSnippet($file, $errorLine, $around);
+        $context = [];
+        $number = max(1, $errorLine - count($snippet['pre_context']));
+
+        foreach ($snippet['pre_context'] as $text) {
+            $context[] = [
+                'line_number' => $number,
+                'line_content' => $text,
+                'is_error_line' => false,
+            ];
+            $number++;
+        }
+
+        if ($snippet['context_line'] !== '' || $errorLine > 0) {
+            $context[] = [
+                'line_number' => $errorLine,
+                'line_content' => $snippet['context_line'],
+                'is_error_line' => true,
+            ];
+            $number = $errorLine + 1;
+        }
+
+        foreach ($snippet['post_context'] as $text) {
+            $context[] = [
+                'line_number' => $number,
+                'line_content' => $text,
+                'is_error_line' => false,
+            ];
+            $number++;
+        }
+
+        return $context;
     }
 
     /**
