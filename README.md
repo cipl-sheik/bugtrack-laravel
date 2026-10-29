@@ -17,7 +17,7 @@ Packagist has no tagged releases yet, so require **`dev-main`** from GitHub:
 
 ```bash
 composer config repositories.bugtrack vcs https://github.com/cipl-sheik/bugtrack-laravel.git
-composer require ciplnew/bugtracking:dev-main
+composer require ciplnew/bugtracking
 ```
 
 That is the full install. Laravel package auto-discovery registers `BugTrackServiceProvider`. Exceptions are reported automatically.
